@@ -19,45 +19,42 @@ class CustomerController(
     private val updateCustomerInputPort: UpdateCustomerInputPort,
     private val deleteCustomerByIdInputPort: DeleteCustomerByIdInputPort
 ) {
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     fun insert(@Valid @RequestBody customerRequest: CustomerRequest) {
-        /*   val customer = Customer(name = customerRequest.name, cpf = customerRequest.cpf)
-           insertCustomerInputPort.insert(customer, customerRequest.zipCode)*/
-        with(customerRequest) {
-            insertCustomerInputPort.insert(
-                Customer(name = name, cpf = cpf),
-                zipCode
-            )
-        }
+        val customer = customerRequest.toCustomer()
+        insertCustomerInputPort.insert(customer, customerRequest.zipCode)
     }
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     fun findAll(): List<CustomerResponse> {
-        val customers = findCustomerInputPort.findAll()
-        return CustomerResponse.fromCustomers(customers)
+        val customersList = findCustomerInputPort.findAll()
+        return CustomerResponse.fromCustomers(customersList)
     }
 
     @GetMapping("/{id}")
     @ResponseStatus(HttpStatus.OK)
     fun findById(@PathVariable id: String): CustomerResponse {
-        val customer = findCustomerInputPort.find(id)
-        return CustomerResponse(customer)
+        val foundCustomer = findCustomerInputPort.find(id)
+        return CustomerResponse(foundCustomer)
     }
 
     @PutMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun update(@PathVariable id: String, @Valid @RequestBody customerRequest: CustomerRequest) {
-        with(customerRequest) {
-            val customer = Customer(id, name, cpf = cpf)
-            updateCustomerInputPort.update(customer, zipCode)
-        }
+        val customer = customerRequest.toCustomer(id)
+        updateCustomerInputPort.update(customer, customerRequest.zipCode)
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(@PathVariable id: String) {
         deleteCustomerByIdInputPort.delete(id)
+    }
+
+    private fun CustomerRequest.toCustomer(id: String? = null): Customer {
+        return Customer(id = id, name = this.name, cpf = this.cpf)
     }
 }
